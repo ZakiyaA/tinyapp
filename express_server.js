@@ -4,10 +4,16 @@ const PORT = 8080; // default port 8080
 
 app.set("view engine", "ejs");
 
-// 
-const generateRandomString = function() {
-  return Math.floor((1 + Math.random()) * 0x10000).toString(6);
+// ....... Generate 6-digit string.......
+function generateRandomString() {
+  var randomChars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  var result = '';
+  for ( var i = 0; i < 6; i++ ) {
+      result += randomChars.charAt(Math.floor(Math.random() * randomChars.length));
+  }
+  return result;
 }
+
 console.log(generateRandomString());
 
 // ...... Our Database ..............
@@ -51,8 +57,6 @@ app.get("/urls/:shortURL", (req, res) => {
   res.render("urls_show", templateVars);
 });
 
-
-
 app.get("/urls", (req, res) => {
   const templateVars = { urls: urlDatabase };
   console.log("temp",templateVars);
@@ -66,13 +70,20 @@ app.post("/urls", (req, res) => {
   let longURL = req.body.longURL;
   // Assign shortURL & longURL to Database...
   urlDatabase[shortURL] = longURL;
- res.redirect(`/urls`);        
+  res.redirect(`/urls`);        
 });
 
 // .....Redirect Short URLs.....
 app.get("/u/:shortURL", (req, res) => {
-  const longURL = urlDatabase[req.params.shortURL];
+  const shortURL = req.params.shortURL
+  const longURL = urlDatabase[shortURL];
   res.redirect(longURL);
+});
+
+app.post("/urls/:shortURL/delete", (req, res) => {
+  const shortURL = req.params.shortURL;
+  delete urlDatabase[shortURL];
+  res.redirect("/urls");
 });
 
 
