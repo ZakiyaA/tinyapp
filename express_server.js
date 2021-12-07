@@ -4,6 +4,7 @@ const PORT = 8080; // default port 8080
 
 app.set("view engine", "ejs");
 
+
 const urlDatabase = {
   "b2xVn2": "http://www.lighthouselabs.ca",
   "c": "http://www.google.com"
@@ -47,6 +48,11 @@ app.get("/urls/:shortURL", (req, res) => {
 app.get("/urls", (req, res) => {
   const templateVars = { urls: urlDatabase };
   res.render("urls_index", templateVars);
+});
+
+app.post("/urls", (req, res) => {
+  console.log(req.body);  // Log the POST request body to the console
+  res.send("Ok");         // Respond with 'Ok' (we will replace this)
 });
 
 
