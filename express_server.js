@@ -4,10 +4,16 @@ const PORT = 8080; // default port 8080
 
 app.set("view engine", "ejs");
 
+// 
+const generateRandomString = function() {
+  return Math.floor((1 + Math.random()) * 0x10000).toString(6);
+}
+console.log(generateRandomString());
 
-const urlDatabase = {
+// ...... Our Database ..............
+let urlDatabase = {
   "b2xVn2": "http://www.lighthouselabs.ca",
-  "c": "http://www.google.com"
+  "9sm5xk": "http://www.google.com"
 };
 
 // convert the request body from a Buffer into string
@@ -45,18 +51,32 @@ app.get("/urls/:shortURL", (req, res) => {
   res.render("urls_show", templateVars);
 });
 
+
+
 app.get("/urls", (req, res) => {
   const templateVars = { urls: urlDatabase };
+  console.log("temp",templateVars);
   res.render("urls_index", templateVars);
 });
 
 app.post("/urls", (req, res) => {
-  console.log(req.body);  // Log the POST request body to the console
-  res.send("Ok");         // Respond with 'Ok' (we will replace this)
+  // Generate random shortURL......
+  let shortURL = generateRandomString();
+  // extract longURL from server......
+  let longURL = req.body.longURL;
+  // Assign shortURL & longURL to Database...
+  urlDatabase[shortURL] = longURL;
+ res.redirect(`/urls`);        
+});
+
+// .....Redirect Short URLs.....
+app.get("/u/:shortURL", (req, res) => {
+  const longURL = urlDatabase[req.params.shortURL];
+  res.redirect(longURL);
 });
 
 
 
 app.listen(PORT, () => {
-  console.log(`Example app listening on port ${PORT}!`);
+  console.log(`Tinyapp is listening on port ${PORT}!`);
 });
