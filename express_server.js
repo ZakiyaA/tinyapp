@@ -27,16 +27,16 @@ const bodyParser = require("body-parser");
 app.use(bodyParser.urlencoded({extended: true}));
 
 app.get("/", (req, res) => {
-  res.send("Hello!");
+  res.redirect("/urls");
 });
 
 app.get("/urls.json", (req, res) => {
   res.json(urlDatabase);
 });
 
-app.get("/hello", (req, res) => {
-  res.send("<html><body>Hello <b>World</b></body></html>\n");
-});
+// app.get("/hello", (req, res) => {
+//   res.send("<html><body>Hello <b>World</b></body></html>\n");
+// });
 
 //............Add a route for /urls................
 app.get("/urls", (req, res) => {
@@ -70,7 +70,7 @@ app.post("/urls", (req, res) => {
   let longURL = req.body.longURL;
   // Assign shortURL & longURL to Database...
   urlDatabase[shortURL] = longURL;
-  res.redirect(`/urls`);        
+  res.redirect(`/urls/${shortURL}`);        
 });
 
 // .....Redirect Short URLs.....
@@ -86,6 +86,19 @@ app.post("/urls/:shortURL/delete", (req, res) => {
   res.redirect("/urls");
 });
 
+// app.post("/urls/:shortURL", (req, res) => {
+//   const shortURL = req.params.shortURL;
+  
+//   res.redirect("/urls");
+// });
+
+app.post("/urls/:shortURL", (req, res) => {
+  const shortURL = req.params.shortURL;
+  const longURL = req.body.longURL;
+  // Assign shortURL & longURL to Database...
+  urlDatabase[shortURL] = longURL;
+  res.redirect('/urls');
+})
 
 
 app.listen(PORT, () => {
