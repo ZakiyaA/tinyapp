@@ -18,11 +18,24 @@ const generateRandomString = function () {
   return result;
 }
 
-// ...... Our Database ..............
+// ...... URLs Database ..............
 let urlDatabase = {
   "b2xVn2": "http://www.lighthouselabs.ca",
   "9sm5xk": "http://www.google.com"
 };
+// ..... users Database.......
+const users = { 
+  "userRandomID": {
+    id: "userRandomID", 
+    email: "user@example.com", 
+    password: "purple-monkey-dinosaur"
+  },
+ "user2RandomID": {
+    id: "user2RandomID", 
+    email: "user2@example.com", 
+    password: "dishwasher-funk"
+  }
+}
 
 // convert the request body from a Buffer into string
 const bodyParser = require("body-parser");
@@ -104,6 +117,23 @@ app.post("/login", (req, res) => {
   // .... Logout Route .....
   app.post("/logout", (req, res) => {
     res.clearCookie('username');
+    res.redirect("/urls");
+  })
+
+  // Register Route.......
+  app.get("/register", (req, res) => {
+     
+    const templateVars = { urls: urlDatabase, username: req.cookies.username};
+    res.render("urls_register", templateVars);
+  });
+  // ........ Registration Edpoint........
+  app.post("/register", (req, res) => {
+    // .. Add new users...........
+    // ... generate a random user ID...
+    let id = generateRandomString();
+    const { email, password } = req.body;
+    users[id] = {id,email,password};
+    res.cookie('user_id', id);
     res.redirect("/urls");
   })
 
