@@ -1,11 +1,15 @@
 const express = require("express");
+const cookieParser = require('cookie-parser')
 const app = express();
+
 const PORT = 8080; // default port 8080
 
 app.set("view engine", "ejs");
 
+app.use(cookieParser())
+
 // ....... Generate 6-digit string.......
-function generateRandomString() {
+const generateRandomString = function () {
   var randomChars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
   var result = '';
   for ( var i = 0; i < 6; i++ ) {
@@ -13,8 +17,6 @@ function generateRandomString() {
   }
   return result;
 }
-
-console.log(generateRandomString());
 
 // ...... Our Database ..............
 let urlDatabase = {
@@ -34,30 +36,30 @@ app.get("/urls.json", (req, res) => {
   res.json(urlDatabase);
 });
 
-//............Add a route for /urls................
+// ......Add a GET Route to Show the Form...........
+
 app.get("/urls", (req, res) => {
-  const templateVars = { urls: urlDatabase };
+  const templateVars = { urls: urlDatabase, username: req.cookies.username};
   res.render("urls_index", templateVars);
 });
 
-// ......Add a GET Route to Show the Form...........
 app.get("/urls/new", (req, res) => {
-  res.render("urls_new");
+  const templateVars = {
+  username: req.cookies["username"],
+  // ... any other vars
+};
+res.render("urls_new", templateVars);
 });
 
 //............Add a route for shortURL.............. 
 app.get("/urls/:shortURL", (req, res) => {
   const shortURL = req.params.shortURL;
   const longURL = urlDatabase[shortURL];
-  const templateVars = { shortURL, longURL};
+  const templateVars = { shortURL, longURL, username: req.cookies.username};
+
   res.render("urls_show", templateVars);
 });
 
-app.get("/urls", (req, res) => {
-  const templateVars = { urls: urlDatabase };
-  console.log("temp",templateVars);
-  res.render("urls_index", templateVars);
-});
 
 app.post("/urls", (req, res) => {
   // Generate random shortURL......
@@ -92,7 +94,20 @@ app.post("/urls/:shortURL", (req, res) => {
   res.redirect('/urls');
 })
 
+// .....Add Login Route..............
+app.post("/login", (req, res) => {
+  const { username } = req.body;
+  res.cookie('username', username);
+  res.redirect('/urls');
+});
 
+  // .... Logout Route .....
+  app.post("/logout", (req, res) => {
+    res.clearCookie('username');
+    res.redirect("/urls");
+  })
+
+  
 app.listen(PORT, () => {
   console.log(`Tinyapp is listening on port ${PORT}!`);
 });
