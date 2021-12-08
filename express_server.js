@@ -34,10 +34,6 @@ app.get("/urls.json", (req, res) => {
   res.json(urlDatabase);
 });
 
-// app.get("/hello", (req, res) => {
-//   res.send("<html><body>Hello <b>World</b></body></html>\n");
-// });
-
 //............Add a route for /urls................
 app.get("/urls", (req, res) => {
   const templateVars = { urls: urlDatabase };
@@ -80,18 +76,14 @@ app.get("/u/:shortURL", (req, res) => {
   res.redirect(longURL);
 });
 
+//
 app.post("/urls/:shortURL/delete", (req, res) => {
   const shortURL = req.params.shortURL;
   delete urlDatabase[shortURL];
   res.redirect("/urls");
 });
 
-// app.post("/urls/:shortURL", (req, res) => {
-//   const shortURL = req.params.shortURL;
-  
-//   res.redirect("/urls");
-// });
-
+//..... Updating longURL
 app.post("/urls/:shortURL", (req, res) => {
   const shortURL = req.params.shortURL;
   const longURL = req.body.longURL;
