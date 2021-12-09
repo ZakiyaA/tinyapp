@@ -9,9 +9,7 @@
 
     <!-- <title>Registration Form </title> -->
   </head>
-
   <body>
-
     <!-- <%- include('partials/_header') %> -->
     <nav class="navbar navbar-expand-md navbar-dark bg-success">
       <a class="navbar-brand" href="/urls">TinyApp</a>
@@ -29,14 +27,14 @@
         </div>
       </nav>
     <main style="margin: 1em;">
-      <h2>Create Account </h2>
-      <form class="form-inline" action="/register" method="POST">
+      <h2>Login  </h2>
+      <form class="form-inline" action="/login" method="POST">
         <div class="form-group mb-2">
           <label for="email"> Email address</label>
           <input class="form-control" type=email   name=email placeholder="Enter email" style="width: 300px; margin: 1em">
-          <label for="password">Password:</label>
+          <label for="password">Enter Password:</label>
           <input class="form-control" type=password  name=password placeholder="Password" style="width: 300px; margin: 1em">
-          <button type="submit" class="btn btn-primary">Register</button>
+          <button type="submit" class="btn btn-primary">Login</button>
         </div>
       </form>
     </main>
