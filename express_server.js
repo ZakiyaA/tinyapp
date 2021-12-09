@@ -51,17 +51,45 @@ const generateRandomString = function () {
   }
   return result;
 }
+//check to see if email exist
+const findEmail = (email, users) => {
+  for (let key in users) {
+    if (email === users[key].email) {
+      return email;
+    }
+  }
+  return undefined;
+};
+
+//check to see if password exist
+const findPassword = (email, db) => {
+  for (let key in db) {
+    if (email === db[key].email) {
+      return db[key].password;
+    }
+  }
+  return undefined;
+};
+
+// find the id by email
+const findUserID = (email, db) => {
+  for (let key in db) {
+    if (email === db[key].email) {
+      return db[key].id;
+    }
+  }
+  return undefined;
+};
 
 //Validate login by checking email and password combination of a user
-const checkPassword = function (email, users) {
+const checkPassword = function (email, password, users) {
   for (let user in users) {
-    if (users[user].email === email) {
+    if (users[user].email === email && users[user].password === password) {
       return true;
     }
   }
   return false;
 }
-
 
 app.get("/", (req, res) => {
   res.redirect("/urls");
@@ -75,7 +103,8 @@ app.get("/urls.json", (req, res) => {
 
 app.get("/urls", (req, res) => {
   const cookieId = req.cookies['user_id']
-  const templateVars = { urls: urlDatabase, user: users[cookieId]};
+  const templateVars = { urls: urlDatabase, 
+                        user: users[cookieId]};
   res.render("urls_index", templateVars);
 });
 
@@ -146,9 +175,21 @@ app.get("/login", (req, res) => {
 
 // .....Add Login Route..............
 app.post("/login", (req, res) => {
-  const { username } = req.body;
-  res.cookie('username', username);
-  res.redirect('/urls');
+  const email = req.body.email;
+  const password = req.body.password;
+  const userEmail = findEmail(email, users);
+  const userPassword = findPassword(email, users);
+  if (email === userEmail) {
+    if (password === userPassword) {
+      const userID = findUserID(email, users);
+      res.cookie('user_id', userID);
+      res.redirect('/urls');
+    } else {
+      res.status(403).send("400 error: An email or password incorrect");
+    }
+  } else {
+    res.status(403).send("403 error: Please Register");
+  }
 });
 
   // .... Logout Route .....
@@ -170,18 +211,19 @@ app.post("/login", (req, res) => {
     // ... generate a random user ID...
     let id = generateRandomString();
     const { email, password } = req.body;
-    users[id] = {id,email,password};
     res.cookie('user_id', id);
     // .... Check if inputs are empty string ....
     if (!email || !password) {
       res.status(400).send("400 error ! An email or password needs to be entered");
       return;
     }
-    else if (checkPassword(email, users)){
+    const userEmail = findEmail(email, users);
+      if (userEmail !== undefined){
       console.log("Matching");
-      res.status(400).send("400 error ! Email is alraedy exist");
+      res.status(400).send("400 error  ! Email is alraedy exist");
       return;
     }
+    users[id] = {id,email,password};
     res.redirect("/urls");
   })
 
