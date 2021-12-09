@@ -136,6 +136,18 @@ app.post("/urls/:shortURL", (req, res) => {
   res.redirect('/urls');
 })
 
+// Login Route.......
+app.get("/login", (req, res) => {
+
+  const cookieId = req.cookies['user_id'];
+  const templateVars = {user: users[cookieId]};
+  res.render("urls_login", templateVars);
+});
+
+
+
+
+
 // .....Add Login Route..............
 app.post("/login", (req, res) => {
   const { username } = req.body;
@@ -147,12 +159,12 @@ app.post("/login", (req, res) => {
   app.post("/logout", (req, res) => {
     res.clearCookie('user_id');
     res.redirect("/urls");
-  })
+  });
 
   // Register Route.......
   app.get("/register", (req, res) => {
     const cookieId = req.cookies['user_id'];
-    const templateVars = { urls: urlDatabase, user: users[cookieId]};
+    const templateVars = {user: users[cookieId]};
     res.render("urls_register", templateVars);
   });
 
