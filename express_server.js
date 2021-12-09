@@ -8,15 +8,20 @@ app.set("view engine", "ejs");
 
 app.use(cookieParser())
 
-// ....... Generate 6-digit string.......
-const generateRandomString = function () {
-  var randomChars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-  var result = '';
-  for ( var i = 0; i < 6; i++ ) {
-      result += randomChars.charAt(Math.floor(Math.random() * randomChars.length));
-  }
-  return result;
-}
+// convert the request body from a Buffer into string
+const bodyParser = require("body-parser");
+app.use(bodyParser.urlencoded({extended: true}));
+
+
+// //.......check to see if password exist
+// const lookUpPassword = (email, users) => {
+//   for (let key in users) {
+//     if (email === users[key].email) {
+//       return users[key].password;
+//     }
+//   }
+//   return undefined;
+// };
 
 // ...... URLs Database ..............
 let urlDatabase = {
@@ -37,9 +42,26 @@ const users = {
   }
 }
 
-// convert the request body from a Buffer into string
-const bodyParser = require("body-parser");
-app.use(bodyParser.urlencoded({extended: true}));
+// ....... Generate 6-digit string.......
+const generateRandomString = function () {
+  var randomChars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  var result = '';
+  for ( var i = 0; i < 6; i++ ) {
+      result += randomChars.charAt(Math.floor(Math.random() * randomChars.length));
+  }
+  return result;
+}
+
+//Validate login by checking email and password combination of a user
+const checkPassword = function (email, users) {
+  for (let user in users) {
+    if (users[user].email === email) {
+      return true;
+    }
+  }
+  return false;
+}
+
 
 app.get("/", (req, res) => {
   res.redirect("/urls");
@@ -133,20 +155,25 @@ app.post("/login", (req, res) => {
     const templateVars = { urls: urlDatabase, user: users[cookieId]};
     res.render("urls_register", templateVars);
   });
+
   // ........ Registration Edpoint..........
   app.post("/register", (req, res) => {
     // .. Add new users...........
     // ... generate a random user ID...
     let id = generateRandomString();
     const { email, password } = req.body;
-    // If the e-mail or password are empty strings, send back a response with the 400 status code.
-    if (email === " " && password === " ") {
-      const errorMessage = 'Empty username or    password. Please make sure you fill out both fields.';
-      res.status(400).render(errorMessage);
-    }
-
     users[id] = {id,email,password};
     res.cookie('user_id', id);
+    // .... Check if inputs are empty string ....
+    if (!email || !password) {
+      res.status(400).send("400 error ! An email or password needs to be entered");
+      return;
+    }
+    else if (checkPassword(email, users)){
+      console.log("Matching");
+      res.status(400).send("400 error ! Email is alraedy exist");
+      return;
+    }
     res.redirect("/urls");
   })
 
