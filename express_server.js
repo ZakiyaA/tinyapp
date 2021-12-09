@@ -52,23 +52,30 @@ app.get("/urls.json", (req, res) => {
 // ......Add a GET Route to Show the Form...........
 
 app.get("/urls", (req, res) => {
-  const templateVars = { urls: urlDatabase, username: req.cookies.username};
+  const cookieId = req.cookies['user_id']
+  const templateVars = { urls: urlDatabase, user: users[cookieId]};
   res.render("urls_index", templateVars);
 });
 
 app.get("/urls/new", (req, res) => {
+  const cookieId = req.cookies['user_id']
   const templateVars = {
-  username: req.cookies["username"],
+  user: users[cookieId],
   // ... any other vars
 };
+console.log("cookieId", cookieId);
+console.log("users", users);
 res.render("urls_new", templateVars);
 });
 
 //............Add a route for shortURL.............. 
 app.get("/urls/:shortURL", (req, res) => {
+  const cookieId = req.cookies['user_id'];
   const shortURL = req.params.shortURL;
   const longURL = urlDatabase[shortURL];
-  const templateVars = { shortURL, longURL, username: req.cookies.username};
+  const templateVars = { shortURL, 
+                          longURL,
+                          user: users[cookieId]};
 
   res.render("urls_show", templateVars);
 });
@@ -116,14 +123,14 @@ app.post("/login", (req, res) => {
 
   // .... Logout Route .....
   app.post("/logout", (req, res) => {
-    res.clearCookie('username');
+    res.clearCookie('user_id');
     res.redirect("/urls");
   })
 
   // Register Route.......
   app.get("/register", (req, res) => {
-     
-    const templateVars = { urls: urlDatabase, username: req.cookies.username};
+    const cookieId = req.cookies['user_id'];
+    const templateVars = { urls: urlDatabase, user: users[cookieId]};
     res.render("urls_register", templateVars);
   });
   // ........ Registration Edpoint........
