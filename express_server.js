@@ -139,6 +139,12 @@ app.post("/login", (req, res) => {
     // ... generate a random user ID...
     let id = generateRandomString();
     const { email, password } = req.body;
+    // If the e-mail or password are empty strings, send back a response with the 400 status code.
+    if (email === " " && password === " ") {
+      const errorMessage = 'Empty username or    password. Please make sure you fill out both fields.';
+      res.status(400).render(errorMessage);
+    }
+
     users[id] = {id,email,password};
     res.cookie('user_id', id);
     res.redirect("/urls");
