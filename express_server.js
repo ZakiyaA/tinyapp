@@ -25,18 +25,24 @@ app.use(bodyParser.urlencoded({extended: true}));
 
 // ...... URLs Database ..............
 let urlDatabase = {
-  "b2xVn2": "http://www.lighthouselabs.ca",
-  "9sm5xk": "http://www.google.com"
+  b6UTxQ: {
+      longURL: "https://www.tsn.ca",
+      userID: "aJ48lW"
+  },
+  i3BoGr: {
+      longURL: "https://www.google.ca",
+      userID: "aJ48lW"
+  }
 };
 // ..... users Database.......
 const users = { 
-  "userRandomID": {
-    id: "userRandomID", 
+  "b6UTxQ": {
+    id: "aJ48lW", 
     email: "user@example.com", 
     password: "purple-monkey-dinosaur"
   },
- "user2RandomID": {
-    id: "user2RandomID", 
+ "i3BoGr": {
+    id: "aJ48lW", 
     email: "user2@example.com", 
     password: "dishwasher-funk"
   }
@@ -111,19 +117,26 @@ app.get("/urls", (req, res) => {
 app.get("/urls/new", (req, res) => {
   const cookieId = req.cookies['user_id']
   const templateVars = {
-  user: users[cookieId],
-  // ... any other vars
-};
-console.log("cookieId", cookieId);
-console.log("users", users);
-res.render("urls_new", templateVars);
+    user: users[cookieId],
+  };
+   // user should not see this page if not logged in
+  if (!cookieId) {
+    res.redirect("/login");
+  } else {
+    res.render("urls_new", templateVars);
+  }
+
 });
 
 //............Add a route for shortURL.............. 
 app.get("/urls/:shortURL", (req, res) => {
-  const cookieId = req.cookies['user_id'];
   const shortURL = req.params.shortURL;
-  const longURL = urlDatabase[shortURL];
+  if (!urlDatabase[shortURL]) {
+    return res.status(400).json({message: "Not valide shortURL passed"})
+  }
+  const cookieId = req.cookies['user_id'];
+  const longURL = urlDatabase[shortURL].longURL;
+  console.log("longURL", longURL);
   const templateVars = { shortURL, 
                           longURL,
                           user: users[cookieId]};
@@ -131,37 +144,56 @@ app.get("/urls/:shortURL", (req, res) => {
   res.render("urls_show", templateVars);
 });
 
-
+ 
 app.post("/urls", (req, res) => {
-  // Generate random shortURL......
-  let shortURL = generateRandomString();
+  const cookieId = req.cookies['user_id'];
+  if (!cookieId) {
+    return res.status(401).json({message: "Access Denied, Please Login first"});
+  }
   // extract longURL from server......
   let longURL = req.body.longURL;
+  if (!longURL) {
+    return res.status(400).json({message: "Please enter valid url"});
+  }
+  // Generate random shortURL......
+  let shortURL = generateRandomString();
+  console.log("cookieId", cookieId);
   // Assign shortURL & longURL to Database...
-  urlDatabase[shortURL] = longURL;
+  const urlObject = {
+    longURL: longURL, 
+    userID: cookieId
+  }
+  urlDatabase[shortURL]= urlObject;
   res.redirect(`/urls/${shortURL}`);        
 });
 
 // .....Redirect Short URLs.....
 app.get("/u/:shortURL", (req, res) => {
+  const cookieId = req.cookies['user_id'];
   const shortURL = req.params.shortURL
-  const longURL = urlDatabase[shortURL];
-  res.redirect(longURL);
+  const longURL = urlDatabase[shortURL].longURL;
+  if (!cookieId) {
+    res.redirect("/urls");
+  } else {
+    res.redirect(longURL);
+  }
+  
+ 
 });
 
 //
 app.post("/urls/:shortURL/delete", (req, res) => {
-  const shortURL = req.params.shortURL;
-  delete urlDatabase[shortURL];
+  // delete urlDatabase[shortURL];
+  delete urlDatabase[req.params.shortURL];
   res.redirect("/urls");
 });
 
 //..... Updating longURL
 app.post("/urls/:shortURL", (req, res) => {
-  const shortURL = req.params.shortURL;
+  const shortURL = req.body.shortURL;
   const longURL = req.body.longURL;
   // Assign shortURL & longURL to Database...
-  urlDatabase[shortURL] = longURL;
+  urlDatabase[req.params.shortURL].longURL = longURL;
   res.redirect('/urls');
 })
 
@@ -205,27 +237,26 @@ app.post("/login", (req, res) => {
     res.render("urls_register", templateVars);
   });
 
-  // ........ Registration Edpoint..........
-  app.post("/register", (req, res) => {
-    // .. Add new users...........
-    // ... generate a random user ID...
-    let id = generateRandomString();
-    const { email, password } = req.body;
-    res.cookie('user_id', id);
-    // .... Check if inputs are empty string ....
-    if (!email || !password) {
-      res.status(400).send("400 error ! An email or password needs to be entered");
-      return;
-    }
-    const userEmail = findEmail(email, users);
-      if (userEmail !== undefined){
-      console.log("Matching");
-      res.status(400).send("400 error  ! Email is alraedy exist");
-      return;
-    }
-    users[id] = {id,email,password};
-    res.redirect("/urls");
-  })
+// ........ Registration Edpoint..........
+app.post("/register", (req, res) => {
+  // .. Add new users with a random user ID...
+  let id = generateRandomString();
+  const { email, password } = req.body;
+  res.cookie('user_id', id);
+  // .... Check if inputs are empty string ....
+  if (!email || !password) {
+    res.status(400).send("400 error ! An email or password needs to be entered");
+    return;
+  }
+  const userEmail = findEmail(email, users);
+  if (userEmail !== undefined) {
+    console.log("Matching");
+    res.status(400).send("400 error  ! Email is alraedy exist");
+    return;
+  }
+  users[id] = { id, email, password };
+  res.redirect("/urls");
+})
 
   
 app.listen(PORT, () => {
