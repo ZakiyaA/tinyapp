@@ -1,6 +1,4 @@
 const {generateRandomString,  findEmail, findPassword, findUserID , checkPassword, urlsForUser} = require('./helpers.js');
-
-
 const express = require("express");
 const cookieParser = require('cookie-parser')
 var cookieSession = require('cookie-session')
@@ -50,10 +48,7 @@ const users = {
   }
 }
 
-
-
 //...... homepage .....
-
 app.get("/", (req, res) => {
   const userID = req.session.userId;
   const user = users[userID];
@@ -168,7 +163,7 @@ app.post("/urls/:id", (req, res) => {
 });
 
 
-// Add 
+// ......... login ...............
 app.get("/login", (req, res) => {
   const templateVars = {user: users[req.session.user_id]};
   res.render("urls_login", templateVars);
