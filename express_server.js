@@ -1,3 +1,6 @@
+const {generateRandomString,  findEmail, findPassword, findUserID , checkPassword, urlsForUser} = require('./helpers.js');
+
+
 const express = require("express");
 const cookieParser = require('cookie-parser')
 var cookieSession = require('cookie-session')
@@ -47,85 +50,38 @@ const users = {
   }
 }
 
-// ....... Generate 6-digit string.......
-const generateRandomString = function () {
-  var randomChars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-  var result = '';
-  for ( var i = 0; i < 6; i++ ) {
-      result += randomChars.charAt(Math.floor(Math.random() * randomChars.length));
-  }
-  return result;
-}
-//check to see if email exist
-const findEmail = (email, users) => {
-  for (let key in users) {
-    if (email === users[key].email) {
-      return email;
-    }
-  }
-  return undefined;
-};
 
-//check to see if password exist
-const findPassword = (email, db) => {
-  for (let key in db) {
-    if (email === db[key].email) {
-      return db[key].password;
-    }
-  }
-  return undefined;
-};
 
-// find the id by email
-const findUserID = (email, db) => {
-  for (let key in db) {
-    if (email === db[key].email) {
-      return db[key].id;
-    }
-  }
-  return undefined;
-};
+//...... homepage .....
 
-//Validate login by checking email and password combination of a user
-const checkPassword = function (email, password, users) {
-  for (let user in users) {
-    if (users[user].email === email && users[user].password === password) {
-      return true;
-    }
-  }
-  return false;
-}
-
-/* Returns an object of short URLs specific to the passed in userID */
-const urlsForUser = function(id, urlDatabase) {
-  const userUrls = {};
-  for (const shortURL in urlDatabase) {
-    if (urlDatabase[shortURL].userID === id) {
-      userUrls[shortURL] = urlDatabase[shortURL];
-    }
-  }
-  return userUrls;
-};
-
-// / => homepage
 app.get("/", (req, res) => {
-  if (req.session.user_id) {
-    res.redirect("/urls");
-  } else {
-    res.redirect("/login");
+  const userID = req.session.userId;
+  const user = users[userID];
+  if (!user) {
+    return res.redirect('/login');
   }
+  return res.redirect('/urls');
 });
 
 app.get("/urls.json", (req, res) => {
   res.json(urlDatabase);
 });
 
-// ......Add a GET Route to Show the Form...........
+//...... Display all links pairs in user's account
 
 app.get("/urls", (req, res) => {
-  // const cookieId = req.cookies['user_id']
-  let templateVars = { urls: urlDatabase, 
-                        user: users[req.session.user_id]};
+  const userID = req.session.user_id;
+  const user = users[userID];
+  if (!user) {
+    return res.status(400).json({message: "You have to Login First"})
+  
+  } else {
+  const urlsToDisplay = urlsForUser(userID, urlDatabase);
+  templateVars = {
+    user,
+    urls: urlsToDisplay
+  };
+}
   res.render("urls_index", templateVars);
 });
 
@@ -198,7 +154,6 @@ app.post("/urls/:shortURL/delete", (req, res) => {
 });
 
 
-
 //..... Edit longURL .................
 app.post("/urls/:id", (req, res) => {
   const userID = req.session.user_id;
@@ -211,7 +166,6 @@ app.post("/urls/:id", (req, res) => {
     res.status(401).send("You do not have authorization to edit this short URL.");
   }
 });
-
 
 
 // Add 
@@ -230,7 +184,7 @@ app.post("/login", (req, res) => {
   if (email === userEmail) {
     if (bcrypt.compareSync(password, userPassword)) {
       const userID = findUserID(email, users);
-      req.session.userID = userID;
+      req.session.user_id = userID;
       res.redirect('/urls');
     } else {
       res.status(403).send("400 error: An email or password incorrect");
@@ -242,37 +196,45 @@ app.post("/login", (req, res) => {
 
   // .... Logout Route .....
   app.post("/logout", (req, res) => {
-    res.clearCookie('user_id');
+    req.session = null;
     res.redirect("/urls");
   });
 
   // Register Route.......
   app.get("/register", (req, res) => {
-    const cookieId = req.cookies['user_id'];
-    const templateVars = {user: users[cookieId]};
-    res.render("urls_register", templateVars);
+    const templateVars = {user: users[req.session.user_id]};
+    if (templateVars.user) {
+      res.redirect("/urls");
+    } else {
+      res.render("urls_register", templateVars);
+    }
   });
 
-// ........ Registration Edpoint..........
-app.post("/register", (req, res) => {
-  // .. Add new users with a random user ID...
-  let id = generateRandomString();
+app.post("/register", function (req, res) {
   const { email, password } = req.body;
-  res.cookie('user_id', id);
-  // .... Check if inputs are empty string ....
-  if (!email || !password) {
-    res.status(400).send("400 error ! An email or password needs to be entered");
-    return;
+  //if email or password input is blank throw an error
+  if (email === "" || password === "") {
+    res.status(400).send("An email or password needs to be entered.")
+    return
+    //if email is already in use throw an error 
+  } else if (findEmail(email, users)) {
+    res.status(400).send("Email is already in use.")
+    return
+  } else {
+    //if the email is not in use, create a new user for TinyApp
+    const userID = generateRandomString();
+    users[userID] = {
+      id: userID,
+      email: email,
+      password: bcrypt.hashSync(password, 8)
+    }
+    req.session.user_id = userID;
+    res.redirect("/urls");
   }
-  const userEmail = findEmail(email, users);
-  if (userEmail !== undefined) {
-    console.log("Matching");
-    res.status(400).send("400 error  ! Email is alraedy exist");
-    return;
-  }
-  users[id] = { id, email, password };
-  res.redirect("/urls");
-})
+});
+
+
+
 
   
 app.listen(PORT, () => {
