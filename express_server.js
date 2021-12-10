@@ -1,6 +1,5 @@
 const express = require("express");
 const cookieParser = require('cookie-parser')
-
 const app = express();
 
 const PORT = 8080; // default port 8080
@@ -212,8 +211,7 @@ app.post("/urls/:id", (req, res) => {
   const userUrls = urlsForUser(userID, urlDatabase);
   if (Object.keys(userUrls).includes(req.params.id)) {
     const shortURL = req.params.id;
-    urlDatabase[shortURL].longURL = req.body.newURL;
-    console.log("llllllong", shortURL);
+    urlDatabase[req.params.id].longURL = req.body.longURL;
     res.redirect('/urls');
   } else {
     res.status(401).send("You do not have authorization to edit this short URL.");
