@@ -1,5 +1,6 @@
 const express = require("express");
 const cookieParser = require('cookie-parser')
+
 const app = express();
 
 const PORT = 8080; // default port 8080
@@ -97,6 +98,17 @@ const checkPassword = function (email, password, users) {
   return false;
 }
 
+/* Returns an object of short URLs specific to the passed in userID */
+const urlsForUser = function(id, urlDatabase) {
+  const userUrls = {};
+  for (const shortURL in urlDatabase) {
+    if (urlDatabase[shortURL].userID === id) {
+      userUrls[shortURL] = urlDatabase[shortURL];
+    }
+  }
+  return userUrls;
+};
+
 app.get("/", (req, res) => {
   res.redirect("/urls");
 });
@@ -172,30 +184,42 @@ app.get("/u/:shortURL", (req, res) => {
   const cookieId = req.cookies['user_id'];
   const shortURL = req.params.shortURL
   const longURL = urlDatabase[shortURL].longURL;
-  if (!cookieId) {
-    res.redirect("/urls");
-  } else {
+  // if (!cookieId) {
+  //   res.redirect("/urls");
+  // } else {
     res.redirect(longURL);
-  }
   
- 
 });
 
-//
+// Delete URLs
 app.post("/urls/:shortURL/delete", (req, res) => {
-  // delete urlDatabase[shortURL];
-  delete urlDatabase[req.params.shortURL];
-  res.redirect("/urls");
+  const userID = req.cookies['user_id'];
+  const userUrls = urlsForUser(userID, urlDatabase);
+  if (Object.keys(userUrls).includes(req.params.shortURL)) {
+    const shortURL = req.params.shortURL;
+    delete urlDatabase[shortURL];
+    res.redirect('/urls');
+  } else {
+    res.status(401).send("You do not have authorization to delete this short URL.");
+  }
 });
 
-//..... Updating longURL
-app.post("/urls/:shortURL", (req, res) => {
-  const shortURL = req.body.shortURL;
-  const longURL = req.body.longURL;
-  // Assign shortURL & longURL to Database...
-  urlDatabase[req.params.shortURL].longURL = longURL;
-  res.redirect('/urls');
-})
+
+
+//..... Edit longURL .................
+app.post("/urls/:id", (req, res) => {
+  const userID = req.cookies['user_id'];
+  const userUrls = urlsForUser(userID, urlDatabase);
+  if (Object.keys(userUrls).includes(req.params.id)) {
+    const shortURL = req.params.id;
+    urlDatabase[shortURL].longURL = req.body.newURL;
+    console.log("llllllong", shortURL);
+    res.redirect('/urls');
+  } else {
+    res.status(401).send("You do not have authorization to edit this short URL.");
+  }
+});
+
 
 
 // Add 
