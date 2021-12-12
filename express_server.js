@@ -1,53 +1,45 @@
-const {generateRandomString,  findEmail, findPassword, findUserID , checkPassword, urlsForUser} = require('./helpers.js');
+const {generateRandomString,  findEmail, findPassword, findUserID , urlsForUser} = require('./helpers.js');
 const express = require("express");
-const cookieParser = require('cookie-parser')
-var cookieSession = require('cookie-session')
-const bcrypt = require('bcryptjs')
+const cookieParser = require('cookie-parser');
+var cookieSession = require('cookie-session');
+const bcrypt = require('bcryptjs');
 const app = express();
-
 const PORT = 8080; // default port 8080
-
 app.set("view engine", "ejs");
-
-app.use(cookieParser())
-
+app.use(cookieParser());
 app.use(
   cookieSession({
     name: 'session',
     keys: ['e1d50c4f-538a-4682-89f4-c002f10a59c8', '2d310699-67d3-4b26-a3a4-1dbf2b67be5c'],
   })
 );
-
 // convert the request body from a Buffer into string
 const bodyParser = require("body-parser");
 app.use(bodyParser.urlencoded({extended: true}));
-
-
 // ...... URLs Database ..............
 let urlDatabase = {
   b6UTxQ: {
-      longURL: "https://www.tsn.ca",
-      userID: "aJ48lW"
+  longURL: "https://www.tsn.ca",
+  userID: "aJ48lW"
   },
   i3BoGr: {
-      longURL: "https://www.google.ca",
-      userID: "aJ48lW"
+  longURL: "https://www.google.ca",
+  userID: "aJ48lW"
   }
 };
 // ..... users Database.......
-const users = { 
+const users = {
   "b6UTxQ": {
-    id: "aJ48lW", 
-    email: "user@example.com", 
+    id: "aJ48lW",
+    email: "user@example.com",
     password: "purple-monkey-dinosaur"
   },
   "i3BoGr": {
-    id: "aJ48lW", 
-    email: "user2@example.com", 
+    id: "aJ48lW",
+    email: "user2@example.com",
     password: "dishwasher-funk"
   }
-}
-
+};
 //...... homepage .....
 app.get("/", (req, res) => {
   const userID = req.session.userId;
@@ -68,26 +60,19 @@ app.get("/urls", (req, res) => {
   const userID = req.session.user_id;
   const user = users[userID];
   if (!user) {
-    return res.status(400).json({message: "You have to Login First"})
-  
+    return res.status(400).json({ message: "You have to Login First" })
   } else {
-  const urlsToDisplay = urlsForUser(userID, urlDatabase);
-  templateVars = {
-    user,
-    urls: urlsToDisplay
-  };
-}
-  res.render("urls_index", templateVars);
+    const urlsToDisplay = urlsForUser(userID, urlDatabase);
+    const templateVars = { user, urls: urlsToDisplay };
+    res.render("urls_index", templateVars);
+  }
 });
-
-
 app.get("/urls/new", (req, res) => {
   // if (!req.session.user_id) {
   //   res.redirect("/login?alert=true");
   // } 
-    let templateVars = { urls: urlDatabase, user: users[req.session.user_id]};
-    res.render("urls_new", templateVars);
-  
+  let templateVars = { urls: urlDatabase, user: users[req.session.user_id] };
+  res.render("urls_new", templateVars);
 });
 
 //............Add a route for shortURL.............. 
@@ -98,34 +83,29 @@ app.get("/urls/:shortURL", (req, res) => {
   }
   const longURL = urlDatabase[shortURL].longURL;
   console.log("longURL", longURL);
-  const templateVars = { shortURL, 
-                          longURL,
-                          user: users[req.session.user_id]};
-
+  const templateVars = { shortURL, longURL, user: users[req.session.user_id]};
   res.render("urls_show", templateVars);
 });
-
- 
+// ....... urls Rout........
 app.post("/urls", (req, res) => {
   if (!req.session.user_id) {
-    return res.status(401).json({message: "Access Denied, Please Login first"});
+    return res.status(401).json({ message: "Access Denied, Please Login first" });
   }
   // extract longURL from server......
   let longURL = req.body.longURL;
   if (!longURL) {
-    return res.status(400).json({message: "Please enter valid url"});
+    return res.status(400).json({ message: "Please enter valid url" });
   }
   // Generate random shortURL......
   let shortURL = generateRandomString();
   // Assign shortURL & longURL to Database...
   const urlObject = {
-    longURL: longURL, 
+    longURL: longURL,
     userID: req.session.user_id
   }
-  urlDatabase[shortURL]= urlObject;
-  res.redirect(`/urls/${shortURL}`);        
+  urlDatabase[shortURL] = urlObject;
+  res.redirect(`/urls/${shortURL}`);
 });
-
 // .....Redirect Short URLs.....
 app.get("/u/:shortURL", (req, res) => {
   if (!urlDatabase.hasOwnProperty(req.params.shortURL)) {
@@ -147,8 +127,6 @@ app.post("/urls/:shortURL/delete", (req, res) => {
     res.status(401).send("You do not have authorization to delete this short URL.");
   }
 });
-
-
 //..... Edit longURL .................
 app.post("/urls/:id", (req, res) => {
   const userID = req.session.user_id;
@@ -161,21 +139,17 @@ app.post("/urls/:id", (req, res) => {
     res.status(401).send("You do not have authorization to edit this short URL.");
   }
 });
-
-
 // ......... login ...............
 app.get("/login", (req, res) => {
   const templateVars = {user: users[req.session.user_id]};
   res.render("urls_login", templateVars);
 });
-
 // .....Add Login Route..............
 app.post("/login", (req, res) => {
   const email = req.body.email;
   const password = req.body.password;
   const userEmail = findEmail(email, users);
   const userPassword = findPassword(email, users);
-  // const hashedPassword = bcrypt.hashSync(userPassword, 10);
   if (email === userEmail) {
     if (bcrypt.compareSync(password, userPassword)) {
       const userID = findUserID(email, users);
@@ -188,13 +162,11 @@ app.post("/login", (req, res) => {
     res.status(403).send("403 error: Please Register");
   }
 });
-
   // .... Logout Route .....
   app.post("/logout", (req, res) => {
     req.session = null;
     res.redirect("/urls");
   });
-
   // Register Route.......
   app.get("/register", (req, res) => {
     const templateVars = {user: users[req.session.user_id]};
@@ -204,7 +176,6 @@ app.post("/login", (req, res) => {
       res.render("urls_register", templateVars);
     }
   });
-
 app.post("/register", function (req, res) {
   const { email, password } = req.body;
   //if email or password input is blank throw an error
@@ -227,11 +198,7 @@ app.post("/register", function (req, res) {
     res.redirect("/urls");
   }
 });
-
-
-
-
-  
+// ..... Server Responsing.............  
 app.listen(PORT, () => {
   console.log(`Tinyapp is listening on port ${PORT}!`);
 });
