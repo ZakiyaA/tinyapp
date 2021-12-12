@@ -1,7 +1,7 @@
 const {generateRandomString,  findEmail, findPassword, findUserID , urlsForUser} = require('./helpers.js');
 const express = require("express");
 const cookieParser = require('cookie-parser');
-var cookieSession = require('cookie-session');
+const cookieSession = require('cookie-session');
 const bcrypt = require('bcryptjs');
 const app = express();
 const PORT = 8080; // default port 8080
@@ -17,28 +17,12 @@ app.use(
 const bodyParser = require("body-parser");
 app.use(bodyParser.urlencoded({extended: true}));
 // ...... URLs Database ..............
-let urlDatabase = {
-  b6UTxQ: {
-  longURL: "https://www.tsn.ca",
-  userID: "aJ48lW"
-  },
-  i3BoGr: {
-  longURL: "https://www.google.ca",
-  userID: "aJ48lW"
-  }
+let urlDatabase = {b6UTxQ: {longURL: "https://www.tsn.ca", userID: "aJ48lW"},
+  i3BoGr: {longURL: "https://www.google.ca", userID: "aJ48lW"}
 };
 // ..... users Database.......
-const users = {
-  "b6UTxQ": {
-    id: "aJ48lW",
-    email: "user@example.com",
-    password: "purple-monkey-dinosaur"
-  },
-  "i3BoGr": {
-    id: "aJ48lW",
-    email: "user2@example.com",
-    password: "dishwasher-funk"
-  }
+const users = { "b6UTxQ": {id: "aJ48lW", email: "user@example.com", password: "purple-monkey-dinosaur"},
+  "i3BoGr": {id: "aJ48lW", email: "user2@example.com", password: "dishwasher-funk"}
 };
 //...... homepage .....
 app.get("/", (req, res) => {
@@ -60,7 +44,7 @@ app.get("/urls", (req, res) => {
   const userID = req.session.user_id;
   const user = users[userID];
   if (!user) {
-    return res.status(400).json({ message: "You have to Login First" })
+    return res.status(400).json({ message: "You have to Login First" });
   } else {
     const urlsToDisplay = urlsForUser(userID, urlDatabase);
     const templateVars = { user, urls: urlsToDisplay };
@@ -70,16 +54,16 @@ app.get("/urls", (req, res) => {
 app.get("/urls/new", (req, res) => {
   // if (!req.session.user_id) {
   //   res.redirect("/login?alert=true");
-  // } 
+  // }
   let templateVars = { urls: urlDatabase, user: users[req.session.user_id] };
   res.render("urls_new", templateVars);
 });
 
-//............Add a route for shortURL.............. 
+//............Add a route for shortURL..............
 app.get("/urls/:shortURL", (req, res) => {
   const shortURL = req.params.shortURL;
   if (!urlDatabase[shortURL]) {
-    return res.status(400).json({message: "Not valide shortURL passed"})
+    return res.status(400).json({message: "Not valide shortURL passed"});
   }
   const longURL = urlDatabase[shortURL].longURL;
   console.log("longURL", longURL);
@@ -102,7 +86,7 @@ app.post("/urls", (req, res) => {
   const urlObject = {
     longURL: longURL,
     userID: req.session.user_id
-  }
+  };
   urlDatabase[shortURL] = urlObject;
   res.redirect(`/urls/${shortURL}`);
 });
@@ -132,7 +116,6 @@ app.post("/urls/:id", (req, res) => {
   const userID = req.session.user_id;
   const userUrls = urlsForUser(userID, urlDatabase);
   if (Object.keys(userUrls).includes(req.params.id)) {
-    const shortURL = req.params.id;
     urlDatabase[req.params.id].longURL = req.body.longURL;
     res.redirect('/urls');
   } else {
@@ -162,43 +145,37 @@ app.post("/login", (req, res) => {
     res.status(403).send("403 error: Please Register");
   }
 });
-  // .... Logout Route .....
-  app.post("/logout", (req, res) => {
-    req.session = null;
+// .... Logout Route .....
+app.post("/logout", (req, res) => {
+  req.session = null;
+  res.redirect("/urls");
+});
+// Register Route.......
+app.get("/register", (req, res) => {
+  const templateVars = { user: users[req.session.user_id] };
+  if (templateVars.user) {
     res.redirect("/urls");
-  });
-  // Register Route.......
-  app.get("/register", (req, res) => {
-    const templateVars = {user: users[req.session.user_id]};
-    if (templateVars.user) {
-      res.redirect("/urls");
-    } else {
-      res.render("urls_register", templateVars);
-    }
-  });
-app.post("/register", function (req, res) {
+  } else {
+    res.render("urls_register", templateVars);
+  }
+});
+app.post("/register", function(req, res) {
   const { email, password } = req.body;
   //if email or password input is blank throw an error
   if (email === "" || password === "") {
-    res.status(400).send("An email or password needs to be entered.")
-    return
-    //if email is already in use throw an error 
+    return res.status(400).send("An email or password needs to be entered.");
+    //if email is already in use throw an error
   } else if (findEmail(email, users)) {
-    res.status(400).send("Email is already in use.")
-    return
+    return res.status(400).send("Email is already in use.");
   } else {
     //if the email is not in use, create a new user for TinyApp
     const userID = generateRandomString();
-    users[userID] = {
-      id: userID,
-      email: email,
-      password: bcrypt.hashSync(password, 8)
-    }
+    users[userID] = {id: userID, email: email, password: bcrypt.hashSync(password, 8)};
     req.session.user_id = userID;
     res.redirect("/urls");
   }
 });
-// ..... Server Responsing.............  
+// ..... Server Responsing.............
 app.listen(PORT, () => {
   console.log(`Tinyapp is listening on port ${PORT}!`);
 });
