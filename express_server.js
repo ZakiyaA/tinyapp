@@ -37,9 +37,7 @@ app.get("/", (req, res) => {
 app.get("/urls.json", (req, res) => {
   res.json(urlDatabase);
 });
-
 //...... Display all links pairs in user's account
-
 app.get("/urls", (req, res) => {
   const userID = req.session.user_id;
   const user = users[userID];
@@ -58,7 +56,6 @@ app.get("/urls/new", (req, res) => {
   let templateVars = { urls: urlDatabase, user: users[req.session.user_id] };
   res.render("urls_new", templateVars);
 });
-
 //............Add a route for shortURL..............
 app.get("/urls/:shortURL", (req, res) => {
   const shortURL = req.params.shortURL;
@@ -98,7 +95,6 @@ app.get("/u/:shortURL", (req, res) => {
   const longURL = urlDatabase[req.params.shortURL].longURL;
   res.redirect(longURL);
 });
-
 // Delete URLs
 app.post("/urls/:shortURL/delete", (req, res) => {
   const userID = req.session.user_id;
